@@ -1,0 +1,79 @@
+# 1. Genetic Algorithm for Optimization Problems:
+
+import numpy as np
+import random
+
+# Define the function to optimize
+def objective_function(x):
+    return x * np.sin(10 * np.pi * x) + 1
+
+# Function to get user input
+def get_user_input():
+    population_size = int(input("Enter the population size: "))
+    num_generations = int(input("Enter the number of generations: "))
+    mutation_rate = float(input("Enter the mutation rate (0 to 1): "))
+    crossover_rate = float(input("Enter the crossover rate (0 to 1): "))
+
+    return population_size, num_generations, mutation_rate, crossover_rate
+
+# Initialize population
+def initialize_population(size):
+    return [random.uniform(0, 1) for _ in range(size)]
+
+# Evaluate fitness
+def evaluate_population(population):
+    return [objective_function(x) for x in population]
+
+# Selection (Tournament Selection)
+def select(population, fitness):
+    tournament_size = min(5, len(population))  # Ensure tournament size is valid
+    selected = []
+    for _ in range(len(population)):
+        tournament = random.sample(list(zip(population, fitness)), tournament_size)
+        winner = max(tournament, key=lambda item: item[1])[0]
+        selected.append(winner)
+    return selected
+
+# Crossover
+def crossover(parent1, parent2, crossover_rate):
+    if random.random() < crossover_rate:
+        return (parent1 + parent2) / 2  # Simple averaging
+    return parent1
+
+# Mutation
+def mutate(individual, mutation_rate):
+    if random.random() < mutation_rate:
+        return random.uniform(0, 1)  # Random new value
+    return individual
+
+# Genetic Algorithm
+def genetic_algorithm(population_size, num_generations, mutation_rate, crossover_rate):
+    population = initialize_population(population_size)
+
+    for generation in range(num_generations):
+        fitness = evaluate_population(population)
+        selected_population = select(population, fitness)
+        new_population = []
+
+        for i in range(0, len(selected_population), 2):
+            parent1 = selected_population[i]
+            parent2 = selected_population[i + 1] if i + 1 < len(selected_population) else selected_population[0]
+            offspring = crossover(parent1, parent2, crossover_rate)
+            mutated_offspring = mutate(offspring, mutation_rate)
+            new_population.append(mutated_offspring)
+
+        population = new_population
+
+    # Final evaluation
+    fitness = evaluate_population(population)
+    best_fitness = max(fitness)
+    best_solution = population[np.argmax(fitness)]
+
+    return best_solution, best_fitness
+
+# Main code to run the genetic algorithm
+population_size, num_generations, mutation_rate, crossover_rate = get_user_input()
+best_x, best_value = genetic_algorithm(population_size, num_generations, mutation_rate, crossover_rate)
+
+print(f"Optimal x: {best_x}")
+print(f"Best function value: {best_value}")
