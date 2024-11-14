@@ -1,0 +1,83 @@
+# 3. Ant Colony Optimization for the Traveling Salesman Problem:
+
+import numpy as np
+
+# Initialize pheromone values
+def initialize_pheromone_matrix(n, tau0):
+    return np.full((n, n), tau0)
+
+# Function to calculate probabilities for the next city
+def calculate_probabilities(tau, alpha, beta, distances, current_city, unvisited):
+    pheromone = tau[current_city, unvisited] ** alpha
+    visibility = (1 / distances[current_city, unvisited]) ** beta
+    probabilities = pheromone * visibility
+    return probabilities / probabilities.sum()
+
+# Ant Colony Optimization for the Traveling Salesman Problem
+def ant_colony_optimization(distances, alpha=1.0, beta=2.0, rho=0.5, tau0=0.1, num_ants=10, num_iterations=100):
+    n = len(distances)
+    tau = initialize_pheromone_matrix(n, tau0)
+    best_tour = None
+    best_tour_length = float('inf')
+
+    for _ in range(num_iterations):
+        all_tours = []
+        all_tour_lengths = []
+
+        # Each ant constructs a solution
+        for ant in range(num_ants):
+            unvisited = list(range(n))
+            current_city = np.random.choice(unvisited)
+            tour = [current_city]
+            unvisited.remove(current_city)
+
+            # Build a complete tour
+            while unvisited:
+                probabilities = calculate_probabilities(tau, alpha, beta, distances, current_city, unvisited)
+                next_city = np.random.choice(unvisited, p=probabilities)
+                tour.append(next_city)
+                unvisited.remove(next_city)
+                current_city = next_city
+
+            # Calculate the length of the tour
+            tour_length = sum(distances[tour[i - 1], tour[i]] for i in range(n))
+            all_tours.append(tour)
+            all_tour_lengths.append(tour_length)
+
+            # Update the best solution found
+            if tour_length < best_tour_length:
+                best_tour = tour
+                best_tour_length = tour_length
+
+        # Evaporate pheromones
+        tau *= (1 - rho)
+
+        # Update pheromones based on each ant's tour
+        for tour, tour_length in zip(all_tours, all_tour_lengths):
+            for i in range(n):
+                tau[tour[i - 1], tour[i]] += 1 / tour_length
+
+        # Reinforce the best tour
+        for i in range(n):
+            tau[best_tour[i - 1], best_tour[i]] += 1 / best_tour_length
+
+    return best_tour, best_tour_length
+
+# Function to get the distance matrix from user input
+def get_distances_from_user():
+    n = int(input("Enter the number of cities: "))
+    print(f"Enter the distance matrix for {n} cities. Each row should contain the distances to other cities (e.g., 0 for the distance to itself).")
+
+    distances = []
+    for i in range(n):
+        row = list(map(float, input(f"Enter distances from city {i+1}: ").split()))
+        distances.append(row)
+
+    return np.array(distances)
+
+# Example usage:
+distances = get_distances_from_user()
+best_tour, best_tour_length = ant_colony_optimization(distances)
+
+print("Best tour:", best_tour)
+print("Best tour length:", best_tour_length)
