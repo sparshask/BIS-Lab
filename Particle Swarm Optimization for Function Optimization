@@ -1,0 +1,76 @@
+# 2. Particle Swarm Optimization for Function Optimization:
+
+import numpy as np
+
+# Define the Rastrigin function
+def rastrigin(x):
+    A = 10
+    n = len(x)
+    return A * n + sum([xi**2 - A * np.cos(2 * np.pi * xi) for xi in x])
+
+class Particle:
+    def __init__(self, dim, minx, maxx):
+        self.position = np.random.uniform(minx, maxx, dim)
+        self.velocity = np.random.uniform(-1, 1, dim)
+        self.best_position = self.position.copy()
+        self.best_value = rastrigin(self.position)
+
+def particle_swarm_optimization(num_particles, dim, num_iterations, w, c1, c2, minx, maxx):
+    swarm = [Particle(dim, minx, maxx) for _ in range(num_particles)]
+    best_pos_swarm = swarm[0].best_position.copy()
+    best_fitness_swarm = swarm[0].best_value
+
+    for _ in range(num_iterations):
+        for particle in swarm:
+            r1, r2 = np.random.rand(dim), np.random.rand(dim)
+
+            # Compute new velocity
+            particle.velocity = (w * particle.velocity +
+                                 c1 * r1 * (particle.best_position - particle.position) +
+                                 c2 * r2 * (best_pos_swarm - particle.position))
+
+            # Compute new position
+            particle.position += particle.velocity
+
+            # Clip position to stay within bounds
+            particle.position = np.clip(particle.position, minx, maxx)
+
+            # Evaluate fitness
+            current_value = rastrigin(particle.position)
+
+            # Update personal best
+            if current_value < particle.best_value:
+                particle.best_value = current_value
+                particle.best_position = particle.position.copy()
+
+            # Update global best
+            if current_value < best_fitness_swarm:
+                best_fitness_swarm = current_value
+                best_pos_swarm = particle.position.copy()
+
+    return best_pos_swarm, best_fitness_swarm
+
+def main():
+    print("Particle Swarm Optimization for Function Optimization")
+
+    # Get user input for parameters
+    num_particles = int(input("Enter the number of particles: "))
+    dim = int(input("Enter the number of dimensions: "))
+    num_iterations = int(input("Enter the number of iterations: "))
+
+    # Hyperparameters
+    w = float(input("Enter inertia weight (w): "))
+    c1 = float(input("Enter cognitive coefficient (c1): "))
+    c2 = float(input("Enter social coefficient (c2): "))
+
+    # Bounds for the particle positions
+    minx = float(input("Enter minimum boundary for positions: "))
+    maxx = float(input("Enter maximum boundary for positions: "))
+
+    # Run PSO
+    best_position, best_value = particle_swarm_optimization(num_particles, dim, num_iterations, w, c1, c2, minx, maxx)
+    print("Best Position:", best_position)
+    print("Best Value:", best_value)
+
+if __name__ == "__main__":
+    main()
